@@ -4,10 +4,10 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Jectiron – Ganzoni Dose Calculator</title>
-  <meta name="description" content="Ferosac iron dose calculator using Ganzoni formula with ferritin-adjusted depot iron." />
+  <meta name="description" content="Jectiron iron dose calculator using Ganzoni formula with ferritin-adjusted depot iron." />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Ferosac Dose" />
+  <meta name="apple-mobile-web-app-title" content="Jectiron Dose" />
   <style>
     :root{
       --bg:#0f172a; /* slate-900 */
@@ -59,7 +59,7 @@
   <div class="wrap">
     <header>
       <div>
-        <div class="title">Ferosac – Ganzoni Dose Calculator</div>
+        <div class="title">Jectiron – Ganzoni Dose Calculator</div>
         <div class="subtitle">Ferritin‑adjusted depot iron • adult use • educational aid</div>
       </div>
       <div class="badge" title="Default depot iron is 500 mg when ferritin is low.">Depot default: 500 mg</div>
@@ -242,7 +242,7 @@
   }
 
   function copy(){
-    const text = `FEROSAC – GANZONI RESULT\n` + plan.textContent;
+    const text = `Jectiron – GANZONI RESULT\n` + plan.textContent;
     navigator.clipboard.writeText(text).then(()=>{
       copyBtn.textContent = "Copied ✓";
       setTimeout(()=>copyBtn.textContent="Copy results",1200);
