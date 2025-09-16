@@ -3,154 +3,266 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Ferric Carboxymaltose (FCM) Dose Calculator</title>
-  <meta name="description" content="Calculate iron deficit and suggest an FCM dosing plan (informational use only)." />
-  <link rel="manifest" href="manifest.webmanifest">
+  <title>Jectiron – Ganzoni Dose Calculator</title>
+  <meta name="description" content="Ferosac iron dose calculator using Ganzoni formula with ferritin-adjusted depot iron." />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Ferosac Dose" />
   <style>
     :root{
-      --bg:#0f172a; --panel:#111827; --text:#e5e7eb; --muted:#9ca3af; --accent:#22c55e; --danger:#ef4444; --card:#0b1222;
+      --bg:#0f172a; /* slate-900 */
+      --panel:#111827; /* gray-900 */
+      --muted:#94a3b8; /* slate-400 */
+      --text:#e5e7eb; /* gray-200 */
+      --accent:#22c55e; /* green-500 */
+      --accent2:#60a5fa; /* blue-400 */
+      --danger:#ef4444; /* red-500 */
     }
-    html,body{margin:0;padding:0;background:linear-gradient(180deg,#0b1222 0%, #0f172a 100%);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial;}
-    .wrap{max-width:900px;margin:32px auto;padding:16px;}
-    .card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:24px;box-shadow:0 8px 24px rgba(0,0,0,0.35)}
-    h1{font-size:28px;margin:0 0 8px}
-    p.sub{color:var(--muted);margin:0 0 16px}
-    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:16px}
-    label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
-    input,select{width:100%;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.12);background:#0f1a33;color:var(--text)}
-    .row{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px}
-    button{padding:12px 16px;border-radius:12px;border:0;cursor:pointer;font-weight:600}
-    .primary{background:var(--accent);color:#052e14}
-    .ghost{background:transparent;border:1px solid rgba(255,255,255,0.18);color:var(--text)}
-    .danger{background:var(--danger);color:#fff}
-    .result{margin-top:20px;padding:16px;border-radius:12px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25)}
+    html,body{height:100%}
+    body{margin:0; font-family:ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"; background:linear-gradient(180deg, #0b1220, #0f172a); color:var(--text)}
+    .wrap{max-width:980px; margin:0 auto; padding:24px}
+    header{display:flex; gap:12px; align-items:center; justify-content:space-between; margin-bottom:16px}
+    .title{font-size:clamp(22px, 3vw, 32px); font-weight:800; letter-spacing:0.2px}
+    .subtitle{color:var(--muted); font-size:14px}
+    .card{background:rgba(17,24,39,.75); border:1px solid rgba(148,163,184,.15); backdrop-filter: blur(6px); border-radius:20px; padding:18px}
+    .grid{display:grid; grid-template-columns:1fr; gap:12px}
+    @media(min-width:820px){ .grid{grid-template-columns:1.2fr .8fr} }
+    label{display:block; font-weight:700; font-size:14px; margin-bottom:6px}
+    input[type="number"], select{
+      width:100%; background:#0b1220; color:var(--text); border:1px solid rgba(148,163,184,.25);
+      border-radius:12px; padding:12px; font-size:16px; outline:none; transition:border .2s, box-shadow .2s
+    }
+    input[type="number"]:focus, select:focus{border-color:var(--accent2); box-shadow:0 0 0 3px rgba(96,165,250,.25)}
+    .row{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+    .hint{font-size:12px; color:var(--muted)}
     .muted{color:var(--muted)}
-    small{color:var(--muted)}
-    a{color:#93c5fd}
-    footer{margin-top:18px;font-size:12px;color:var(--muted)}
-    .pill{display:inline-block;padding:6px 10px;border-radius:999px;background:#0f1a33;border:1px solid rgba(255,255,255,0.1)}
-    .list{margin:8px 0 0 18px}
-    .list li{margin:6px 0}
+    .switch{display:flex; align-items:center; gap:10px}
+    .btns{display:flex; gap:10px; flex-wrap:wrap}
+    .btn{appearance:none; border:1px solid rgba(148,163,184,.25); background:#0b1220; color:var(--text); padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:700}
+    .btn.primary{background:linear-gradient(135deg, #22c55e, #16a34a); border-color:transparent}
+    .btn.ghost{background:transparent}
+    .btn.warn{background:linear-gradient(135deg, #ef4444, #b91c1c); border-color:transparent}
+    .kpi{display:grid; grid-template-columns:repeat(3,1fr); gap:12px}
+    .k{background:#0b1220; border:1px solid rgba(148,163,184,.2); border-radius:16px; padding:16px}
+    .k .label{font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.12em}
+    .k .value{font-size:clamp(18px, 3.2vw, 28px); font-weight:900; margin-top:6px}
+    details{background:#0b1220; border:1px dashed rgba(148,163,184,.35); border-radius:16px; padding:14px}
+    summary{cursor:pointer; font-weight:800}
+    .footer{margin-top:18px; font-size:12px; color:var(--muted)}
+    .badge{display:inline-flex; align-items:center; gap:6px; background:#0b1220; border:1px solid rgba(148,163,184,.25); padding:8px 10px; border-radius:999px; font-weight:700}
+    .out{white-space:pre-wrap; background:#0b1220; border:1px solid rgba(148,163,184,.2); border-radius:12px; padding:12px}
   </style>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#0f172a">
 </head>
 <body>
   <div class="wrap">
-    <div class="card">
-      <h1>Ferric Carboxymaltose (FCM) Dose Calculator</h1>
-      <p class="sub">Computes iron deficit with the Ganzoni method and proposes an FCM split plan. <b>For education only — not medical advice.</b></p>
-
-      <div class="grid">
-        <div>
-          <label>Weight (kg)</label>
-          <input id="weight" type="number" min="1" step="0.1" value="70">
-        </div>
-        <div>
-          <label>Current Hb (g/dL)</label>
-          <input id="hb" type="number" min="1" max="25" step="0.1" value="9.5">
-        </div>
-        <div>
-          <label>Target Hb (g/dL)</label>
-          <input id="target" type="number" min="7" max="16" step="0.1" value="13">
-        </div>
-        <div>
-          <label>Depot iron (mg) <small class="muted">(store)</small></label>
-          <input id="depot" type="number" min="0" step="50" value="500">
-        </div>
-        <div>
-          <label>Ferritin (µg/L) <small class="muted">(optional)</small></label>
-          <input id="ferritin" type="number" min="0" step="1" placeholder="e.g. 15">
-        </div>
-        <div>
-          <label>Blood volume factor</label>
-          <select id="factor">
-            <option value="2.4">2.4 (default adults)</option>
-            <option value="2.0">2.0 (smaller body size)</option>
-            <option value="3.0">3.0 (larger body size)</option>
-          </select>
-        </div>
+    <header>
+      <div>
+        <div class="title">Ferosac – Ganzoni Dose Calculator</div>
+        <div class="subtitle">Ferritin‑adjusted depot iron • adult use • educational aid</div>
       </div>
+      <div class="badge" title="Default depot iron is 500 mg when ferritin is low.">Depot default: 500 mg</div>
+    </header>
 
-      <div class="row">
-        <button class="primary" onclick="calc()">Calculate</button>
-        <button class="ghost" onclick="prefill(60,8.5,13,500,10)">Example</button>
-        <button class="danger" onclick="resetForm()">Reset</button>
-      </div>
+    <div class="grid">
+      <section class="card">
+        <div class="row">
+          <div>
+            <label for="weight">Body weight (kg)</label>
+            <input id="weight" type="number" step="0.1" min="1" placeholder="e.g., 70" />
+            <div class="hint">Use actual or dosing weight per your protocol.</div>
+          </div>
+          <div>
+            <label for="targetHb">Target Hb (g/dL)</label>
+            <input id="targetHb" type="number" step="0.1" min="5" max="18" value="15" />
+            <div class="hint">Common targets 13–15 g/dL (individualize).</div>
+          </div>
+        </div>
+        
+        <div class="row">
+          <div>
+            <label for="actualHb">Actual Hb (g/dL)</label>
+            <input id="actualHb" type="number" step="0.1" min="0" max="18" placeholder="e.g., 9.5" />
+          </div>
+          <div>
+            <label for="ferritin">Ferritin (ng/mL)</label>
+            <input id="ferritin" type="number" step="1" min="0" placeholder="e.g., 25" />
+          </div>
+        </div>
 
-      <div id="out" class="result" style="display:none"></div>
-      <footer>
-        <div class="pill">Rules applied</div>
-        <ul class="list">
-          <li>Iron deficit (mg) = <b>weight × (targetHb − currentHb) × factor + depot</b>.</li>
-          <li>If ferritin ≥ 100 µg/L, depot is reduced to 200 mg; if ferritin ≥ 300 µg/L, depot = 0 mg.</li>
-          <li>FCM split plan caps each dose at <b>≤ 1000 mg</b> and <b>≤ 15 mg/kg</b> (whichever is smaller) per week.</li>
-        </ul>
-      </footer>
+        <div class="row">
+          <div class="switch">
+            <input id="inflamm" type="checkbox" />
+            <label for="inflamm">CKD / active inflammation suspected</label>
+          </div>
+          <div class="switch">
+            <input id="cap1000" type="checkbox" checked />
+            <label for="cap1000">Cap single session at 1000 mg</label>
+          </div>
+        </div>
+
+        <div class="btns" style="margin-top:12px">
+          <button class="btn primary" id="calcBtn">Calculate</button>
+          <button class="btn ghost" id="resetBtn">Reset</button>
+          <button class="btn ghost" id="copyBtn">Copy results</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="kpi">
+          <div class="k">
+            <div class="label">Iron deficit</div>
+            <div class="value" id="ironDef">—</div>
+            <div class="hint">kg × (Target−Actual) × 2.4</div>
+          </div>
+          <div class="k">
+            <div class="label">Depot iron</div>
+            <div class="value" id="depot">—</div>
+            <div class="hint" id="depotHint">Ferritin‑adjusted</div>
+          </div>
+          <div class="k">
+            <div class="label">Total dose</div>
+            <div class="value" id="total">—</div>
+            <div class="hint">Rounded to 100 mg vials</div>
+          </div>
+        </div>
+        <div style="margin-top:12px">
+          <label>IV Iron plan</label>
+          <div class="out" id="plan">Results will appear here…</div>
+        </div>
+      </section>
     </div>
+
+    <details style="margin-top:14px">
+      <summary>How is depot iron chosen?</summary>
+      <div class="muted" style="margin-top:8px">
+        <ul>
+          <li><b>Ferritin &lt; 30</b> ng/mL (no inflammation) <i>or</i> <b>&lt; 100</b> ng/mL (if CKD/inflammation): add <b>+500 mg</b>.</li>
+          <li><b>Ferritin 100–300</b>: add <b>+200–300 mg</b> (use 250 mg default).</li>
+          <li><b>Ferritin 300–500</b>: consider <b>+100–200 mg</b> (use 150 mg default).</li>
+          <li><b>Ferritin &gt; 500</b>: add <b>0 mg</b>.</li>
+        </ul>
+        <p class="hint">These are common pragmatic cutoffs; individualize for pregnancy, pediatrics, or high ferritin states. This tool does not replace clinical judgment.</p>
+      </div>
+    </details>
+
+    <details style="margin-top:10px">
+      <summary>Formula (Ganzoni)</summary>
+      <div class="muted" style="margin-top:8px">
+        Total Iron Dose (mg) = <b>Weight</b> (kg) × (<b>Target Hb</b> − <b>Actual Hb</b>) (g/dL) × <b>2.4</b> + <b>Depot Iron</b>
+      </div>
+    </details>
+
+    <p class="footer">⚠️ Educational aid only. Verify doses against local guidelines and product labels (e.g., Ferosac / ferric carboxymaltose / other IV iron). Not for pediatric dosing.
+    </p>
   </div>
 
-  <script>
-    function prefill(w,h,t,d,f){weight.value=w;hb.value=h;target.value=t;depot.value=d;ferritin.value=f;calc();}
-    function resetForm(){
-      weight.value=70; hb.value=9.5; target.value=13; depot.value=500; ferritin.value="";
-      factor.value="2.4"; out.style.display="none"; out.innerHTML="";
-    }
-    function clampDosePerSession(totalMg, kg){
-      const byWeight = Math.floor(15 * kg);     // 15 mg/kg
-      const cap = Math.min(1000, byWeight);     // ≤1000 mg and ≤15 mg/kg
-      return Math.min(cap, totalMg);
-    }
-    function suggestPlan(totalMg, kg){
-      const sessions = [];
-      let remaining = Math.round(totalMg);
-      while(remaining > 0){
-        const thisDose = clampDosePerSession(remaining, kg);
-        sessions.push(thisDose);
-        remaining -= thisDose;
-      }
-      return sessions;
-    }
-    function calc(){
-      const kg = parseFloat(weight.value||0);
-      const hbNow = parseFloat(hb.value||0);
-      const hbTarget = parseFloat(target.value||0);
-      const dep = parseFloat(depot.value||0);
-      const fac = parseFloat(factor.value||2.4);
-      const ferr = parseFloat(ferritin.value||NaN);
+<script>
+(function(){
+  const $ = (id)=>document.getElementById(id);
+  const weight = $("weight"), targetHb=$("targetHb"), actualHb=$("actualHb"), ferritin=$("ferritin"), inflamm=$("inflamm"), cap1000=$("cap1000");
+  const ironDef=$("ironDef"), depot=$("depot"), total=$("total"), plan=$("plan"), depotHint=$("depotHint");
+  const calcBtn=$("calcBtn"), resetBtn=$("resetBtn"), copyBtn=$("copyBtn");
 
-      if(!(kg>0) || !(hbTarget>0) || !(hbNow>=0) || !(fac>0)){ alert("Please check inputs."); return; }
+  function roundToVial(mg){
+    // round to nearest 100 mg (common vial granularity)
+    return Math.round(mg/100)*100;
+  }
 
-      // Adjust depot by ferritin (simple heuristic)
-      let adjDepot = dep;
-      if(!Number.isNaN(ferr)){
-        if(ferr >= 300) adjDepot = 0;
-        else if(ferr >= 100) adjDepot = Math.min(dep, 200);
-      }
-
-      const deficit = kg * (hbTarget - hbNow) * fac + adjDepot;
-      const needMg = Math.max(0, Math.round(deficit));
-
-      const plan = suggestPlan(needMg, kg);
-      const totalSessions = plan.length;
-
-      out.style.display="block";
-      out.innerHTML = `
-        <h3 style="margin:0 0 8px">Estimated iron need: ${needMg.toLocaleString()} mg</h3>
-        <div class="muted" style="margin-bottom:10px">Depot used: ${adjDepot} mg ${!Number.isNaN(ferr) ? `(ferritin=${ferr} µg/L)` : ""}</div>
-        ${needMg===0 ? "<div>No deficit estimated.</div>" : `
-          <div><b>Suggested FCM plan</b> (weekly):</div>
-          <ul class="list">${plan.map((d,i)=>`<li>Session ${i+1}: <b>${d} mg</b></li>`).join("")}</ul>
-          <div class="muted" style="margin-top:8px">Caps applied: ≤1000 mg per session and ≤15 mg/kg.</div>
-          <div class="muted">Total sessions: ${totalSessions}</div>
-        `}
-        <div class="muted" style="margin-top:10px"><small>This tool is for education only and does not replace clinical judgment or product labeling.</small></div>
-      `;
+  function chooseDepot(ferr, infl){
+    let note="Ferritin‑adjusted";
+    if(isNaN(ferr)) return {mg:500, note:"Ferritin unknown → default 500 mg"};
+    if(!infl){
+      if(ferr < 30) return {mg:500, note:"Ferritin < 30 → +500 mg"};
+    } else {
+      if(ferr < 100) return {mg:500, note:"Inflamm/CKD & Ferritin < 100 → +500 mg"};
     }
-    // Optional: register SW if present (won't block rendering)
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('./service-worker.js').catch(()=>{});
-      });
+    if(ferr < 100) return {mg:500, note:"Ferritin < 100 → +500 mg"};
+    if(ferr < 300) return {mg:250, note:"Ferritin 100–300 → +250 mg"};
+    if(ferr < 500) return {mg:150, note:"Ferritin 300–500 → +150 mg"};
+    return {mg:0, note:"Ferritin > 500 → +0 mg"};
+  }
+
+  function planDoses(totalMg){
+    // Suggest sessions (e.g., 1000 mg max per session if selected)
+    const sessions=[];
+    let remaining = totalMg;
+    const cap = cap1000.checked ? 1000 : Infinity;
+    while(remaining>0){
+      const dose = Math.min(remaining, cap);
+      sessions.push(dose);
+      remaining -= dose;
     }
-  </script>
+    return sessions;
+  }
+
+  function formatPlan(sessions){
+    return sessions.map((d,i)=>`Session ${i+1}: ${d.toLocaleString()} mg`).join("\n");
+  }
+
+  function calc(){
+    const w = parseFloat(weight.value);
+    const t = parseFloat(targetHb.value);
+    const a = parseFloat(actualHb.value);
+    const f = parseFloat(ferritin.value);
+
+    if(!w || isNaN(t) || isNaN(a)){
+      plan.textContent = "Enter weight, target Hb, and actual Hb.";
+      ironDef.textContent = depot.textContent = total.textContent = "—";
+      depotHint.textContent = "Ferritin‑adjusted";
+      return;
+    }
+    if(t <= a){
+      plan.textContent = "Target Hb must be greater than actual Hb for deficit calculation.";
+      ironDef.textContent = depot.textContent = total.textContent = "—";
+      depotHint.textContent = "Ferritin‑adjusted";
+      return;
+    }
+
+    const deficit = w * (t - a) * 2.4; // Ganzoni core
+    const depotObj = chooseDepot(f, inflamm.checked);
+    const rawTotal = deficit + depotObj.mg;
+
+    const roundedTotal = roundToVial(rawTotal);
+
+    ironDef.textContent = `${Math.round(deficit).toLocaleString()} mg`;
+    depot.textContent = `${depotObj.mg} mg`;
+    depotHint.textContent = depotObj.note;
+    total.textContent = `${roundedTotal.toLocaleString()} mg`;
+
+    const sessions = planDoses(roundedTotal);
+    const txt = `Calculated with Ganzoni:\n  Deficit = ${Math.round(deficit)} mg\n  Depot = ${depotObj.mg} mg (${depotObj.note})\n  Total (rounded to 100 mg) = ${roundedTotal} mg\n\nSuggested IV iron plan${cap1000.checked?" (≤1000 mg/session)":""}:\n${formatPlan(sessions)}\n\nNotes:\n• Round per your vial size and product label.\n• Recheck Hb/TSAT/ferritin after repletion as per protocol.`;
+    plan.textContent = txt;
+  }
+
+  function reset(){
+    weight.value = ""; actualHb.value=""; ferritin.value=""; targetHb.value=15; inflamm.checked=false; cap1000.checked=true;
+    ironDef.textContent = depot.textContent = total.textContent = "—"; plan.textContent = "Results will appear here…"; depotHint.textContent = "Ferritin‑adjusted";
+  }
+
+  function copy(){
+    const text = `FEROSAC – GANZONI RESULT\n` + plan.textContent;
+    navigator.clipboard.writeText(text).then(()=>{
+      copyBtn.textContent = "Copied ✓";
+      setTimeout(()=>copyBtn.textContent="Copy results",1200);
+    }).catch(()=>{
+      copyBtn.textContent = "Copy failed";
+      setTimeout(()=>copyBtn.textContent="Copy results",1200);
+    });
+  }
+
+  calcBtn.addEventListener("click", calc);
+  resetBtn.addEventListener("click", reset);
+  copyBtn.addEventListener("click", copy);
+})();
+</script>
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("/service-worker.js").catch(()=>{});
+    });
+  }
+</script>
 </body>
 </html>
